@@ -15,6 +15,7 @@ port = "2003"
 un = "na"
 tree = "test.graph.thing"
 zip = nil
+test = nil
 
 # Arguements
 opt_parser = OptionParser.new do |opts|
@@ -34,6 +35,9 @@ opt_parser = OptionParser.new do |opts|
   opts.on("-h", "--help", "Usage options.") do
     puts opts
     exit
+  end
+  opts.on("-T", "--test", "Test mode just prints output.") do
+    test = "true"
   end
   begin opts.parse! ARGV
   rescue => e
@@ -66,12 +70,20 @@ a.each { |x|
 res = Hash[ts.group_by {|x| x}.map {|k,v| [k,v.count]}]
 
 # Send the data to graphite
-socket = TCPSocket.open(server, port.to_i)
-puts "Sending Data to graphite server at #{server} on port #{port}"
-res.each { |x|
-	data = "#{tree} #{x.reverse}".delete! ",\[\]"
-	puts data
-	socket.write data
-}
+if test == "true"
+        puts "Testing Data Output..."
+        res.each { |x|
+                data = "#{tree} #{x.reverse}".delete! ",\[\]"
+                puts data
+        }
+else
+	socket = TCPSocket.open(server, port.to_i)
+	puts "Sending Data to graphite server at #{server} on port #{port}"
+	res.each { |x|
+		data = "#{tree} #{x.reverse}".delete! ",\[\]"
+		puts data
+		socket.write data
+	}
+	socket.close
+end
 puts "Complete!"
-socket.close
